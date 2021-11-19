@@ -12,6 +12,7 @@ uint8_t R=0; // return stack pointer
 uint16_t P=0; // program memory pointer
 uint16_t A=0; // RAM pointer
 unsigned long elapsed=0; // for counter timer
+uint64_t D=0; // for double result of multiplication
 
 // data stack
 #define STKSIZE 16
@@ -216,7 +217,7 @@ void _negate(){
 }
 
 void _abs(){
-    T=abs(T);
+    if(T&0x80000000) _negate();
 }
 
 void _twostar(){
@@ -241,9 +242,9 @@ void _fetch(){
 void _fetchplus(){
     DUP;
     T=ram[A++];
-    T=(T<<8)+(ram[A++]);
-    T=(T<<8)+(ram[A++]);
-    T=(T<<8)+(ram[A++]);
+    T+=(ram[A++]<<8);
+    T+=(ram[A++]<<16);
+    T+=(ram[A++]<<24);
 }
 
 void _wfetchplus(){
@@ -339,6 +340,26 @@ void _cfetchplus(){
     T=ram[A++];
 }
 
+void _umstar(){
+    D=T;
+    DROP;
+    D*=T;
+    T=D&0xffffffff;
+    DUP;
+    T=(D>>32)&0xffffffff;
+}
+
+void _umslashmod(){
+    N=T;
+    DROP;
+    D=T<<32;
+    DROP;
+    D+=T;
+    T=D%N;
+    DUP;
+    T=D/N;
+}
+
 void (*function[])()={
     _enter , _exit , _abort , _quit , // 3
     _emit , _key , _lit , // 6
@@ -353,7 +374,7 @@ void (*function[])()={
     _wstoreplus , _fetchp , _cstore , // 45
     _store , _cstoreplus , _storeplus , // 48
     _depth , _execute , _huh , _cfetchplus , // 52
-    _wfetchplus , // 53
+    _wfetchplus , _umstar , _umslashmod , // 55
 };
 
 void _execute(){

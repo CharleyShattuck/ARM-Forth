@@ -87,6 +87,8 @@ code execute  50 ,
 code huh?  51 ,
 code c@+  52 ,
 code w@+  53 ,
+code um*  54 ,
+code um/mod  55 ,
 
 :m begin (  - a)  here m;
 :m again ( a)  branch [ 2/ ] , m;
@@ -138,7 +140,10 @@ code w@+  53 ,
     dig emit
     r> emit r> emit r> emit
     drop space ;
+: hc. ( c - )
+    dig >r dig emit r> emit drop space ;
 : d ( a - a')  dup hw. p! space 7 #, for @p+ hw. next p ;
+: dr ( a - a')  dup hw. a! space 15 #, for c@+ hc. next a ;
 variable tib 30 cpuALLOT
 variable pad 30 cpuALLOT
 -: .word  pad a!
@@ -167,7 +172,7 @@ here [ 4 + constant dict ]
     repeat ;
 : interpret
     begin
-        begin .sh cr query space find while
+        begin [ char > ] #, emit .sh cr query space find while
             execute depth -if huh? then drop
         repeat tib count type huh?
     again
@@ -178,4 +183,9 @@ here [ 4 + constant dict ]
     repeat drop ; 
 : ' (  - a)  query find ; \ interpret only
 : ? @ h. ;
+: * ( n1 n2 - n3)  um* drop ;
+
+\ unsigned versions of / and mod
+: / ( n1 n2 - n3)  0 #, swap um/mod swap drop ;
+: mod ( n1 n2 - n2)  0 #, swap um/mod drop ;
 
