@@ -253,6 +253,12 @@ void _wfetchplus(){
     T+=(ram[A++]<<8);
 }
 
+void _wfetch(){
+    W=T;
+    T=ram[W++];
+    T+=(ram[W]<<8);
+}
+
 void _fetchpplus(){
     DUP;
     T=memory[P++];
@@ -289,6 +295,14 @@ void _fetchp(){
 void _wstoreplus(){
     ram[A++]=(T&0xff);
     ram[A++]=((T>>8)&0xff);
+    DROP;
+}
+
+void _wstore(){
+    W=T;
+    DROP;
+    ram[W++]=(T&0xff);
+    ram[W]=((T>>8)&0xff);
     DROP;
 }
 
@@ -352,12 +366,24 @@ void _umstar(){
 void _umslashmod(){
     N=T;
     DROP;
-    D=T<<32;
+    D=T;
+    D=D<<32;
     DROP;
     D+=T;
     T=D%N;
     DUP;
     T=D/N;
+}
+
+void _dnegate(){
+    D=T;
+    DROP;
+    D=D<<32;
+    D+=T;
+    D=(-D);
+    T=D&0xffffffff;
+    DUP;
+    T=(D>>32)&0xffffffff;
 }
 
 void (*function[])()={
@@ -375,6 +401,7 @@ void (*function[])()={
     _store , _cstoreplus , _storeplus , // 48
     _depth , _execute , _huh , _cfetchplus , // 52
     _wfetchplus , _umstar , _umslashmod , // 55
+    _wfetch , _wstore , _dnegate , // 58
 };
 
 void _execute(){

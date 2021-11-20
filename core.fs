@@ -89,6 +89,9 @@ code c@+  52 ,
 code w@+  53 ,
 code um*  54 ,
 code um/mod  55 ,
+code w@  56 ,
+code w!  57 ,
+code dnegate  58 ,
 
 :m begin (  - a)  here m;
 :m again ( a)  branch [ 2/ ] , m;
@@ -114,13 +117,43 @@ code um/mod  55 ,
 \ think of #, as a literal instruction in an assembler
 :m #,  lit [ dup $ffff and ] , [ $10000 / $ffff and ] , m;
 
-: false  0 #, ;
-: true  -1 #, ;
+variable tib 30 cpuALLOT
+variable pad 30 cpuALLOT
 : 1+  1 #, + ;
 : 1-  -1 #, + ;
+: rot ( a b c - b c a)  >r swap r> swap ;
 : count ( a1 - a2 c)  dup 1+ swap c@ ;
 : space  32 #, emit ;
 : type ( a l - )  1- for count emit next drop ;
+
+: * ( n1 n2 - n3)  um* drop ;
+\ unsigned versions of / and mod
+: / ( n1 n2 - n3)  0 #, swap um/mod swap drop ;
+: mod ( n1 n2 - n2)  0 #, swap um/mod drop ;
+: ud/mod ( ud u - urem udquo)
+    >r 0 #, r@ um/mod  r> swap >r um/mod r> ;
+wvariable holder
+: hold ( c)  holder w@ 1- dup holder w! c! ;
+: sign ( c)  -if [ char - ] #, hold then drop ;
+: <#  pad holder w! ;
+: #> ( ud - adr len)  drop drop holder w@ pad over - ;
+cvariable base
+: decimal  $0a #, base c! ;
+: hex  $10 #, base c! ;
+: # ( ud1 = ud2)
+    base c@ ud/mod rot 9 #, over - -if drop 7 #, + dup then 
+    drop 48 #, + hold ;
+: #s ( ud - 0 0)
+    begin # over over or while drop repeat drop ;
+: ud. ( ud)  <# #s #> type space ;
+: u. ( u)  0 #, ud. ;
+: dabs ( d - +d)  -if dnegate then ;
+: d. ( d)  dup >r dabs <# #s r> sign #> type space ;
+: 0< ( n - flag)  -if drop -1 #, exit then drop 0 #, ;
+: . ( n)  dup 0< d. ;
+
+: false  0 #, ;
+: true  -1 #, ;
 : BL  32 #, ;
 : max ( a b - c)
     over over - -if drop swap drop exit then
@@ -144,8 +177,6 @@ code um/mod  55 ,
     dig >r dig emit r> emit drop space ;
 : d ( a - a')  dup hw. p! space 7 #, for @p+ hw. next p ;
 : dr ( a - a')  dup hw. a! space 15 #, for c@+ hc. next a ;
-variable tib 30 cpuALLOT
-variable pad 30 cpuALLOT
 -: .word  pad a!
     p @p $ff #, and 2/ for @p+ w!+ next
     pad count type space @p+ hw. ;
@@ -183,9 +214,4 @@ here [ 4 + constant dict ]
     repeat drop ; 
 : ' (  - a)  query find ; \ interpret only
 : ? @ h. ;
-: * ( n1 n2 - n3)  um* drop ;
-
-\ unsigned versions of / and mod
-: / ( n1 n2 - n3)  0 #, swap um/mod swap drop ;
-: mod ( n1 n2 - n2)  0 #, swap um/mod drop ;
 
