@@ -92,6 +92,7 @@ code um/mod  55 ,
 code w@  56 ,
 code w!  57 ,
 code dnegate  58 ,
+-code (s")  59 ,
 
 :m begin (  - a)  here m;
 :m again ( a)  branch [ 2/ ] , m;
@@ -112,15 +113,19 @@ code dnegate  58 ,
 :m cvariable  code 14 , cpuHERE , 1 cpuALLOT m;
 :m wvariable  code 14 , cpuHERE , 2 cpuALLOT m;
 :m variable  code 14 , cpuHERE , 4 cpuALLOT m;
-\ :m constant  code 14 , , m;
 
 \ think of #, as a literal instruction in an assembler
 :m #,  lit [ dup $ffff and ] , [ $10000 / $ffff and ] , m;
+:m s"  (s") here 0 , [ [char] " word count 0 do
+        count ,-t loop drop ]
+    here [ over - 2/ 1 - swap !-t ] m;
+: 1+  1 #, + ;
+: 1-  -1 #, + ;
+: ptype ( a l - )  swap p! 1- for @p+ emit next ;
+:m ."  s" ptype m;
 
 variable tib 30 cpuALLOT
 variable pad 30 cpuALLOT
-: 1+  1 #, + ;
-: 1-  -1 #, + ;
 : rot ( a b c - b c a)  >r swap r> swap ;
 : count ( a1 - a2 c)  dup 1+ swap c@ ;
 : space  32 #, emit ;
@@ -188,7 +193,7 @@ here [ 4 + constant dict ]
     tib dup c@ 1+ over c! dup c@ + c! ;
 : echo ( c - c)  dup emit ;
 : query
-    0 #, tib ! false
+    false tib ! false
     begin drop key BL max BL xor until BL xor echo tib!
     begin key BL max BL xor while BL xor echo tib! repeat
     drop BL tib dup c@ + 1+ c! ;
@@ -202,11 +207,9 @@ here [ 4 + constant dict ]
         match if exit then drop
     repeat ;
 : interpret
-    begin
-        begin [ char > ] #, emit .sh cr query space find while
-            execute depth -if huh? then drop
-        repeat tib count type huh?
-    again
+    begin [ char > ] #, emit .sh cr query space find while
+        execute depth -if huh? then drop
+    repeat tib count type huh?
 -: digit ( n1 - n2)  $3a #, - -if 10 #, + exit then 29 #, - ; 
 : h# (  - n)  0 #, \ interpret only
     begin key BL max BL xor while
@@ -214,4 +217,7 @@ here [ 4 + constant dict ]
     repeat drop ; 
 : ' (  - a)  query find ; \ interpret only
 : ? @ h. ;
+: 0= ( n - flag)  if drop false exit then
+    drop true ;
+: =  ( n1 n2 - flag)  - 0= ;
 

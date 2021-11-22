@@ -1,8 +1,5 @@
 \ main.fs
 target
-turnkey 
-    decimal
-\    2000 #, ms .sh cr words 
-\    begin  query space dictionary match .sh cr again
-    begin interpret again
+: test  ." this is going to be good " ;
+turnkey decimal interpret
 

@@ -386,6 +386,14 @@ void _dnegate(){
     T=(D>>32)&0xffffffff;
 }
 
+void _squote(){
+    DUP;
+    T=I+1;
+    DUP;
+    T=memory[I++];
+    I+=T;
+}
+
 void (*function[])()={
     _enter , _exit , _abort , _quit , // 3
     _emit , _key , _lit , // 6
@@ -402,6 +410,7 @@ void (*function[])()={
     _depth , _execute , _huh , _cfetchplus , // 52
     _wfetchplus , _umstar , _umslashmod , // 55
     _wfetch , _wstore , _dnegate , // 58
+    _squote , // 59
 };
 
 void _execute(){
