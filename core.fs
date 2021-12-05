@@ -93,6 +93,13 @@ code w@  56 ,
 code w!  57 ,
 code dnegate  58 ,
 -code (s")  59 ,
+code nip  60 ,
+code initMCP23017  61 ,
+code @MCP23017  62 ,
+code initGPIO  63 ,
+code @GPIO  64 ,
+code lshift  65 ,
+code rshift  65 ,
 
 :m begin (  - a)  here m;
 :m again ( a)  branch [ 2/ ] , m;
@@ -137,6 +144,9 @@ variable pad 30 cpuALLOT
 : mod ( n1 n2 - n2)  0 #, swap um/mod drop ;
 : ud/mod ( ud u - urem udquo)
     >r 0 #, r@ um/mod  r> swap >r um/mod r> ;
+\ unsigned division
+: */mod ( n1 n2 n3 - r q)  >r um* r> um/mod ;
+: */ ( n1 n2 n3 - q)  */mod nip ;
 wvariable holder
 : hold ( c)  holder w@ 1- dup holder w! c! ;
 : sign ( c)  -if [ char - ] #, hold then drop ;
@@ -145,7 +155,7 @@ wvariable holder
 cvariable base
 : decimal  $0a #, base c! ;
 : hex  $10 #, base c! ;
-: # ( ud1 = ud2)
+: # ( ud1 - ud2)
     base c@ ud/mod rot 9 #, over - -if drop 7 #, + dup then 
     drop 48 #, + hold ;
 : #s ( ud - 0 0)
@@ -163,6 +173,8 @@ cvariable base
 : max ( a b - c)
     over over - -if drop swap drop exit then
     drop drop ;
+
+0 [if] \ these were used before <# # #> were defined
 -: dig ( n1 - n2 n3)  dup 2/ 2/ 2/ 2/ swap
     $0f #, and $0a #, - -if $3a #, + exit then
     $61 #, + ;
@@ -180,11 +192,20 @@ cvariable base
     drop space ;
 : hc. ( c - )
     dig >r dig emit r> emit drop space ;
+[then]
+: h. ( n - )  base c@ >r hex 0 #,
+    <# # # # # # # # # #> type space r> base c! ;
+: hw. ( n - )  base c@ >r hex 0 #,
+    <# # # # # #> type space r> base c! ;
+: hc. ( c - )  base c@ >r hex 0 #,
+    <# # # #> type space r> base c! ;
+\ dump memory, program and ram, in hex
 : d ( a - a')  dup hw. p! space 7 #, for @p+ hw. next p ;
-: dr ( a - a')  dup hw. a! space 15 #, for c@+ hc. next a ;
+: r ( a - a')  dup hw. a! space 15 #, for c@+ hc. next a ;
 -: .word  pad a!
     p @p $ff #, and 2/ for @p+ w!+ next
     pad count type space @p+ hw. ;
+
 \ interpretive debugging
 here [ 4 + constant dict ]
 : dictionary  $a5 #, p! ;
@@ -206,10 +227,6 @@ here [ 4 + constant dict ]
     begin p @p while drop
         match if exit then drop
     repeat ;
-: interpret
-    begin [ char > ] #, emit .sh cr query space find while
-        execute depth -if huh? then drop
-    repeat tib count type huh?
 -: digit ( n1 - n2)  $3a #, - -if 10 #, + exit then 29 #, - ; 
 : h# (  - n)  0 #, \ interpret only
     begin key BL max BL xor while
@@ -220,4 +237,13 @@ here [ 4 + constant dict ]
 : 0= ( n - flag)  if drop false exit then
     drop true ;
 : =  ( n1 n2 - flag)  - 0= ;
+-: ?.  base c@ $10 #, - if drop . exit then drop u. ;
+: .s  depth 0= if drop ." --> empty " exit then drop
+    depth 1 #, = if drop dup ." --> " ?. exit then drop
+    ." --> " depth dup a! begin swap >r 1- while repeat drop
+    a begin r@ ?. r> swap 1- while repeat drop ;
+: interpret
+    begin .s cr query space find while
+        execute depth -if huh? then drop
+    repeat tib count type huh?
 

@@ -1,6 +1,7 @@
 // ARM-Forth.ino
 
 #include "memory.h"
+#include <Wire.h>
 
 // Forth registers
 uint32_t T=0; // cached top of data stack
@@ -81,8 +82,7 @@ void _zbranch(){
 }
 
 void _pbranch(){
-    W=T;
-    if(W&0x8000){
+    if(T&0x80000000){
         I+=1;
         return;
     }
@@ -96,9 +96,9 @@ void _lit(){
 }
 
 void _next(){
-    W=rstack[R-1];
-    if(W){
-        rstack[R-1]=W-1;
+    N=rstack[R-1];
+    if(N){
+        rstack[R-1]=N-1;
         I=memory[I];
         return;
     }
@@ -341,7 +341,7 @@ void _storeplus(){
 
 void _depth(){
     DUP;
-    T=S;
+    T=S-1;
 }
 
 void _huh(){
@@ -394,6 +394,70 @@ void _squote(){
     I+=T;
 }
 
+void _nip(){
+    S-=1;
+}
+
+void _initMCP23017(){
+    Wire.begin();
+    Wire.beginTransmission(0x20);
+    Wire.write(0x0c); // GPPUA
+    Wire.write(0xff);
+    Wire.write(0xff);
+    Wire.endTransmission();
+}
+
+void _fetchMCP23017(){
+    DUP;
+    Wire.beginTransmission(0x20);
+    Wire.write(0x12); // GPIOA
+    Wire.endTransmission();
+    Wire.requestFrom(0x20, 2);
+    T=Wire.read();
+    W=Wire.read();
+    T|=W<<8;
+    T^=0xffff;
+    T&=0xffff;
+}
+
+void _initGPIO(){
+    pinMode(9, INPUT_PULLUP);
+    pinMode(10, INPUT_PULLUP);
+    pinMode(11, INPUT_PULLUP);
+    pinMode(12, INPUT_PULLUP);
+    pinMode(A1, INPUT_PULLUP);
+    pinMode(A2, INPUT_PULLUP);
+    pinMode(A3, INPUT_PULLUP);
+    pinMode(A4, INPUT_PULLUP);
+    pinMode(A5, INPUT_PULLUP);
+}
+
+void _fetchGPIO(){
+    DUP;
+    T=digitalRead(9);
+    T|=digitalRead(10)<<1;
+    T|=digitalRead(11)<<2;
+    T|=digitalRead(12)<<3;
+    T|=digitalRead(A1)<<4;
+    T|=digitalRead(A2)<<5;
+    T|=digitalRead(A3)<<6;
+    T|=digitalRead(A4)<<7;
+    T|=digitalRead(A5)<<8;
+    T^=0x01ff;
+}
+
+void _lshift(){
+    W=T;
+    DROP;
+    T=T<<W;
+}
+
+void _rshift(){
+    W=T;
+    DROP;
+    T=T>>W;
+}
+
 void (*function[])()={
     _enter , _exit , _abort , _quit , // 3
     _emit , _key , _lit , // 6
@@ -410,7 +474,8 @@ void (*function[])()={
     _depth , _execute , _huh , _cfetchplus , // 52
     _wfetchplus , _umstar , _umslashmod , // 55
     _wfetch , _wstore , _dnegate , // 58
-    _squote , // 59
+    _squote , _nip , _initMCP23017 , _fetchMCP23017 , // 62
+    _initGPIO , _fetchGPIO , _lshift , _rshift , // 66
 };
 
 void _execute(){
