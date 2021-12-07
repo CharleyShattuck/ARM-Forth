@@ -1,11 +1,15 @@
 \ main.fs
 target
-variable data 4 allot
+variable data 4 ramALLOT
 : /data  data a! 5 #, for 0 #, c!+ next ;
-
+: under+ ( n1 n2 n3 - m1+n3 n2)  rot + swap ;
+: #bits ( n1 - n2)  0 #, swap
+    31 #, for -if 1 #, under+ then 2* next drop ;
 : @pins (  - n)  @MCP23017 @GPIO 16 #, lshift or ;
-: press (  - n)  0 #, begin drop @pins until ;
+: press (  - n)  dup begin drop @pins until ;
 : release ( n1 - n2)  begin @pins while or repeat drop ;
+\ : release ( n1 - n2)  begin @pins
+\        over #bits over #bits swap - -if drop drop exit then drop or again
 \ : test   begin cr press release $20 #, - while $20 #, + h. repeat drop ;
 : scan (  - n)
     begin press 20 #, ms @pins if or release exit then drop again
@@ -38,11 +42,15 @@ variable data 4 allot
     dup $0000040 #, and if $08 #, 3 #, mark then drop \ E
     dup $0000080 #, and if $04 #, 3 #, mark then drop \ U
     drop ;
-: send  data a! 5 #, for c@+ emit next ;
+variable 'spit
+: spit  'spit @ execute ;
+: >emit  ['] emit #, 'spit ! ;
+: >hc.  ['] hc. #, 'spit ! ;
+: send  data a! 5 #, for c@+ spit next ;
 \ : test  scan Gemini send cr ;
 : go  begin scan Gemini send again
 : init  initMCP23017 initGPIO ;
 turnkey decimal init
-\    interpret
-    go
-    
+\    >hc. interpret
+    >emit go
+

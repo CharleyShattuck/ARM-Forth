@@ -50,7 +50,7 @@ include ./compiler.fs
 include ./core.fs  \ core Forth words
 include ./main.fs  \ application code
 
-\ headers \ tack headers into end of dictionary
+\ headers \ tuck headers into end of dictionary
 host thp @ target-image - 2/ dict !-t \ patch start of dictionary
 
 : .stack  depth if  >red  then  .s >black cr ;

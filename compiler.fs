@@ -55,9 +55,9 @@ variable tdp  \ Rom pointer.
 : report  cr ." HERE=" target HERE host u. cr ;
 
 variable trp  \ Ram pointer.
-: cpuHERE  (  - a)   trp @ ;
-: cpuORG  ( a - )  trp ! ; 0 cpuORG
-: cpuALLOT  ( n - )  trp +! ;
+: ramHERE  (  - a)   trp @ ;
+: ramORG  ( a - )  trp ! ; 0 ramORG
+: ramALLOT  ( n - )  trp +! ;
 
 \ ----- Optimization ----- /
 variable 'edge
@@ -107,24 +107,11 @@ create _comma  3 c, 32 c, char , c, 32 c,
 
 \ ----- Headers on the target ----- /
 variable thp
-\ create target-heads target-size allot
-\ create end-of-heads
-\ : headsize end-of-heads thp @ - ;
-\ target-heads target-size + 3 - thp !
 target-image target-size + 4 - thp !
 0 thp @ !
-\ 0 value heads
 nowarn
 : header (  - )
    thp @ >r  labels @ cell+ dup cell+ dup c@ 3 + dup 1 and + negate thp +!
    thp @ over c@ 1 + dup 1 and + move  @ 2/ dup 8 rshift  r@ 1 - c!  r> 2 - c! ;
 warn
-0 [if]
-\ Tack headers onto end of code.
-: headers  (  - )
-	target-size target here host headsize + - 0<
-	abort" Target memory overflow"
-	thp @ target here host dup to heads there headsize move
-	headsize tdp +! ;
-[then]
 

@@ -117,9 +117,10 @@ code rshift  65 ,
 :m -:  -code  0 , m;
 :m :  code  0 , m;
 :m ;  exit m;
-:m cvariable  code 14 , cpuHERE , 1 cpuALLOT m;
-:m wvariable  code 14 , cpuHERE , 2 cpuALLOT m;
-:m variable  code 14 , cpuHERE , 4 cpuALLOT m;
+:m cvariable  code 14 , ramHERE , 1 ramALLOT m;
+:m wvariable  code 14 , ramHERE , 2 ramALLOT m;
+:m variable  code 14 , ramHERE , 4 ramALLOT m;
+:m [']  [ ' >body @ ] m;
 
 \ think of #, as a literal instruction in an assembler
 :m #,  lit [ dup $ffff and ] , [ $10000 / $ffff and ] , m;
@@ -131,8 +132,8 @@ code rshift  65 ,
 : ptype ( a l - )  swap p! 1- for @p+ emit next ;
 :m ."  s" ptype m;
 
-variable tib 30 cpuALLOT
-variable pad 30 cpuALLOT
+variable tib 30 ramALLOT
+variable pad 30 ramALLOT
 : rot ( a b c - b c a)  >r swap r> swap ;
 : count ( a1 - a2 c)  dup 1+ swap c@ ;
 : space  32 #, emit ;
