@@ -2,6 +2,7 @@
 
 #include "memory.h"
 #include <Wire.h>
+#include <Keyboard.h>
 
 // Forth registers
 uint32_t T=0; // cached top of data stack
@@ -73,11 +74,22 @@ void _branch(){
     I=memory[I];
 }
 
+
 void _zbranch(){
     if(T==0){
         I=memory[I];
         return;
     }
+    I+=1;
+}
+
+void _dropzbranch(){
+    if(T==0){
+        DROP;
+        I=memory[I];
+        return;
+    }
+    DROP;
     I+=1;
 }
 
@@ -407,6 +419,7 @@ void _initMCP23017(){
     Wire.endTransmission();
 }
 
+// only one port expander in the system
 void _fetchMCP23017(){
     DUP;
     Wire.beginTransmission(0x20);
@@ -420,6 +433,7 @@ void _fetchMCP23017(){
     T&=0xffff;
 }
 
+// all the I/O pins needed for the steno keyboard
 void _initGPIO(){
     pinMode(9, INPUT_PULLUP);
     pinMode(10, INPUT_PULLUP);
@@ -458,6 +472,30 @@ void _rshift(){
     T=T>>W;
 }
 
+void _Keyboard_begin(){
+    Keyboard.begin();
+}
+
+void _Keyboard_press(){
+    Keyboard.press(T);
+    DROP;
+}
+
+void _Keyboard_release(){
+    Keyboard.release(T);
+    DROP;
+}
+
+void _Keyboard_releaseAll(){
+    Keyboard.releaseAll();
+}
+
+void _Keyboard_end(){
+    Keyboard.end();
+}
+
+void _execute();
+
 void (*function[])()={
     _enter , _exit , _abort , _quit , // 3
     _emit , _key , _lit , // 6
@@ -476,6 +514,9 @@ void (*function[])()={
     _wfetch , _wstore , _dnegate , // 58
     _squote , _nip , _initMCP23017 , _fetchMCP23017 , // 62
     _initGPIO , _fetchGPIO , _lshift , _rshift , // 66
+    _Keyboard_begin , _Keyboard_press , // 68
+    _Keyboard_release , _Keyboard_releaseAll , _Keyboard_end , // 71
+    _dropzbranch , // 72
 };
 
 void _execute(){

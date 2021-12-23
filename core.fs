@@ -44,7 +44,7 @@ code key  5 ,
 -code branch  7 ,
 -code 0branch  8 ,
 -code +branch  9 ,
-code (next)  10 ,
+-code (next)  10 ,
 code >r  11 ,
 code r>  12 ,
 code r@  13 ,
@@ -99,18 +99,27 @@ code @MCP23017  62 ,
 code initGPIO  63 ,
 code @GPIO  64 ,
 code lshift  65 ,
-code rshift  65 ,
+code rshift  66 ,
+code Keyboard.begin  67 ,
+code Keyboard.press  68 ,
+code Keyboard.release  69 ,
+code Keyboard.releaseAll  70 ,
+\ code Keyboard.end  71 ,
+-code /branch  72 ,
 
 :m begin (  - a)  here m;
 :m again ( a)  branch [ 2/ ] , m;
-\ 0branch doesn't drop the stack
+\ 0branch and +branch don't drop the stack
 :m until ( a)  0branch [ 2/ ] , m;
 :m -until ( a)  +branch [ 2/ ] , m;
+:m /until ( a)  /branch [ 2/ ] , m;
 :m then ( a)  here [ 2/ swap ] !-t ;
 :m if (  - a)  0branch begin 0 , m;
 :m -if (  - a)  +branch begin 0 , m;
+:m /if (  - a)  /branch begin 0 , m;
 :m while ( a1 - a2 a1)  if [ swap ] m;
 :m -while ( a1 - a2 a3)  -if [ swap ] m;
+:m /while ( a1 - a2 a3)  /if [ swap ] m;
 :m repeat ( a1 a2 - )  again then m;
 :m for  >r begin m;
 :m next  (next) [ 2/ ] , m;
@@ -120,10 +129,10 @@ code rshift  65 ,
 :m cvariable  code 14 , ramHERE , 1 ramALLOT m;
 :m wvariable  code 14 , ramHERE , 2 ramALLOT m;
 :m variable  code 14 , ramHERE , 4 ramALLOT m;
-:m [']  [ ' >body @ ] m;
 
 \ think of #, as a literal instruction in an assembler
 :m #,  lit [ dup $ffff and ] , [ $10000 / $ffff and ] , m;
+:m [']  [ ' >body @ ] #, m;
 :m s"  (s") here 0 , [ [char] " word count 0 do
         count ,-t loop drop ]
     here [ over - 2/ 1 - swap !-t ] m;

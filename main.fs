@@ -8,9 +8,6 @@ variable data 4 ramALLOT
 : @pins (  - n)  @MCP23017 @GPIO 16 #, lshift or ;
 : press (  - n)  dup begin drop @pins until ;
 : release ( n1 - n2)  begin @pins while or repeat drop ;
-\ : release ( n1 - n2)  begin @pins
-\        over #bits over #bits swap - -if drop drop exit then drop or again
-\ : test   begin cr press release $20 #, - while $20 #, + h. repeat drop ;
 : scan (  - n)
     begin press 20 #, ms @pins if or release exit then drop again
 
@@ -44,13 +41,22 @@ variable data 4 ramALLOT
     drop ;
 variable 'spit
 : spit  'spit @ execute ;
-: >emit  ['] emit #, 'spit ! ;
-: >hc.  ['] hc. #, 'spit ! ;
+: >emit  ['] emit 'spit ! ;
+: >hc.  ['] hc. 'spit ! ;
 : send  data a! 5 #, for c@+ spit next ;
-\ : test  scan Gemini send cr ;
-: go  begin scan Gemini send again
+: emitHID ( c)
+    ( Keyboard.begin) dup Keyboard.press 2 #, ms
+    Keyboard.release ( Keyboard.end) ;
+: navigate  $86 #, Keyboard.press $b3 a #, emitHID
+    begin scan $20 #, = /while $b3 #, emitHID repeat
+    Keyboard.releaseAll ;
+: go ( n - n)
+    begin
+        begin scan $1000220 #, - while $1000220 #, + Gemini send repeat
+        drop navigate
+    again
 : init  initMCP23017 initGPIO ;
-turnkey decimal init
+turnkey decimal init Keyboard.begin
 \    >hc. interpret
     >emit go
 
