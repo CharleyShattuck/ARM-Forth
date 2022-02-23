@@ -112,14 +112,14 @@ code Keyboard.releaseAll  70 ,
 \ 0branch and +branch don't drop the stack
 :m until ( a)  0branch [ 2/ ] , m;
 :m -until ( a)  +branch [ 2/ ] , m;
-:m /until ( a)  /branch [ 2/ ] , m;
+:m until/ ( a)  /branch [ 2/ ] , m;
 :m then ( a)  here [ 2/ swap ] !-t ;
 :m if (  - a)  0branch begin 0 , m;
 :m -if (  - a)  +branch begin 0 , m;
-:m /if (  - a)  /branch begin 0 , m;
+:m if/ (  - a)  /branch begin 0 , m;
 :m while ( a1 - a2 a1)  if [ swap ] m;
 :m -while ( a1 - a2 a3)  -if [ swap ] m;
-:m /while ( a1 - a2 a3)  /if [ swap ] m;
+:m while/ ( a1 - a2 a3)  if/ [ swap ] m;
 :m repeat ( a1 a2 - )  again then m;
 :m for  >r begin m;
 :m next  (next) [ 2/ ] , m;

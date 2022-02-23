@@ -9,7 +9,7 @@ variable data 4 ramALLOT
 : press (  - n)  dup begin drop @pins until ;
 : release ( n1 - n2)  begin @pins while or repeat drop ;
 : scan (  - n)
-    begin press 20 #, ms @pins if or release exit then drop again
+    begin press 30 #, ms @pins if or release exit then drop again
 
 : mark ( mask a)  data + dup >r c@ or r> c! ;
 : Gemini ( n)  /data $80 #, data c!
@@ -48,15 +48,60 @@ variable 'spit
     ( Keyboard.begin) dup Keyboard.press 2 #, ms
     Keyboard.release ( Keyboard.end) ;
 : navigate  $86 #, Keyboard.press $b3 a #, emitHID
-    begin scan $20 #, = /while $b3 #, emitHID repeat
+    begin scan $20 #, = while/ $b3 #, emitHID repeat
     Keyboard.releaseAll ;
-: go ( n - n)
+: go-Gemini ( n - n)
     begin
         begin scan $1000220 #, - while $1000220 #, + Gemini send repeat
         drop navigate
     again
+
+\ NKRO keyboard mode
+
+cvariable former
+: spew ( c - )
+    dup Keyboard.press
+    former c@ if dup Keyboard.release then
+    drop former c! ;
+;
+: send-NKRO ( n - )
+    false former c!
+    dup  $100000 #, and if/ [ char q ] #, spew then
+    dup  $200000 #, and if/ [ char w ] #, spew then
+    dup  $400000 #, and if/ [ char e ] #, spew then
+    dup  $800000 #, and if/ [ char r ] #, spew then
+    dup $1000000 #, and if/ [ char t ] #, spew then
+\
+    dup $8000 #, and if/ [ char u ] #, spew then
+    dup $4000 #, and if/ [ char i ] #, spew then
+    dup $2000 #, and if/ [ char o ] #, spew then
+    dup $1000 #, and if/ [ char p ] #, spew then
+    dup  $100 #, and if/ [ char [ ] #, spew then
+\
+    dup $80000 #, and if/ [ char a ] #, spew then
+    dup $40000 #, and if/ [ char s ] #, spew then
+    dup $20000 #, and if/ [ char d ] #, spew then
+    dup $10000 #, and if/ [ char f ] #, spew then
+    dup   $200 #, and if/ [ char g ] #, spew then
+\
+    dup  $01 #, and if/ [ char j ] #, spew then
+    dup  $02 #, and if/ [ char k ] #, spew then
+    dup  $04 #, and if/ [ char l ] #, spew then
+    dup $800 #, and if/ [ char ; ] #, spew then
+    dup $400 #, and if/ [ char ' ] #, spew then
+\
+    dup $08 #, and if/ [ char c ] #, spew then
+    dup $10 #, and if/ [ char v ] #, spew then
+    dup $20 #, and if/ [ char 3 ] #, spew then
+    dup $40 #, and if/ [ char n ] #, spew then
+    dup $80 #, and if/ [ char m ] #, spew then
+    drop Keyboard.releaseAll ;
+: go-NKRO
+    begin scan send-NKRO again
+
 : init  initMCP23017 initGPIO ;
 turnkey decimal init Keyboard.begin
-\    >hc. interpret
-    >emit go
+\   >hc. interpret
+\   >emit go-Gemini
+    go-NKRO
 
